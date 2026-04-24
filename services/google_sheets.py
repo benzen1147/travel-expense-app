@@ -118,13 +118,42 @@ def record_expense(
     sheet_name = first_sheet["title"]
     sheet_gid = first_sheet["sheetId"]
 
-    sheets.spreadsheets().values().append(
+    resp = sheets.spreadsheets().values().append(
         spreadsheetId=ss_id,
         range=f"'{sheet_name}'!A:O",
         valueInputOption="USER_ENTERED",
         insertDataOption="INSERT_ROWS",
         body={"values": [row]},
     ).execute()
+
+    # 追加した行の書式をリセット（ヘッダー行の装飾を引き継がない）
+    updated_range = resp.get("updates", {}).get("updatedRange", "")
+    # "シート名!A5:O5" のような形式からrow番号を取得
+    import re
+    m = re.search(r"(\d+):.*?(\d+)$", updated_range)
+    if m:
+        row_idx = int(m.group(1)) - 1  # 0-indexed
+        sheets.spreadsheets().batchUpdate(
+            spreadsheetId=ss_id,
+            body={"requests": [{
+                "repeatCell": {
+                    "range": {
+                        "sheetId": sheet_gid,
+                        "startRowIndex": row_idx,
+                        "endRowIndex": row_idx + 1,
+                    },
+                    "cell": {
+                        "userEnteredFormat": {
+                            "textFormat": {"bold": False},
+                            "backgroundColor": {
+                                "red": 1.0, "green": 1.0, "blue": 1.0,
+                            },
+                        },
+                    },
+                    "fields": "userEnteredFormat(textFormat,backgroundColor)",
+                },
+            }]},
+        ).execute()
 
     sheet_url = f"https://docs.google.com/spreadsheets/d/{ss_id}/edit#gid={sheet_gid}"
     return {"sheetUrl": sheet_url, "spreadsheetId": ss_id}
