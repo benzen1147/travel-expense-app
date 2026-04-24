@@ -112,10 +112,12 @@ def submit():
             if form_data.get(key):
                 form_data[key] = date.fromisoformat(form_data[key])
 
-        # 金額を int に変換
+        # 金額・泊数を int に変換
         for items_key in ("transport_items", "accommodation_items"):
             for item in form_data.get(items_key, []):
                 item["amount"] = int(item.get("amount", 0))
+                if "nights" in item:
+                    item["nights"] = int(item.get("nights", 1) or 1)
 
         # バリデーション
         errors = validate_submission(form_data)

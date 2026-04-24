@@ -130,6 +130,9 @@ textarea { resize: vertical; min-height: 60px; }
   align-items: center;
   margin-bottom: 8px;
 }
+.item-row-accom {
+  grid-template-columns: 1fr 70px 120px 40px;
+}
 .item-row input { margin-bottom: 0; }
 
 .btn-remove {

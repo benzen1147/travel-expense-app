@@ -168,17 +168,19 @@ def build_expense_report(output_path: str | Path, data: dict) -> int:
 
     # ── 宿泊費内訳 ──
     story.append(Paragraph("【宿泊費内訳】", s_section))
-    a_rows = [["No.", "内容", "金額（円）"]]
+    a_rows = [["No.", "内容", "泊数", "金額（円）"]]
     for i, item in enumerate(data.get("accommodation_items", []), 1):
-        a_rows.append([str(i), item["desc"], f"{item['amount']:,}"])
-    a_rows.append(["", "小計", f"{accommodation_total:,}"])
-    at = Table(a_rows, colWidths=[12 * mm, 123 * mm, 35 * mm])
+        nights = item.get("nights", 1) or 1
+        a_rows.append([str(i), item["desc"], f"{nights}泊", f"{item['amount']:,}"])
+    a_rows.append(["", "小計", "", f"{accommodation_total:,}"])
+    at = Table(a_rows, colWidths=[12 * mm, 100 * mm, 23 * mm, 35 * mm])
     at.setStyle(TableStyle(base_ts + [
         ("FONTNAME", (0, 0), (-1, 0), FONT_G),
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E0E0E0")),
         ("ALIGN", (0, 0), (0, -1), "CENTER"),
-        ("ALIGN", (2, 0), (2, -1), "RIGHT"),
-        ("RIGHTPADDING", (2, 0), (2, -1), 4),
+        ("ALIGN", (2, 0), (2, -1), "CENTER"),
+        ("ALIGN", (3, 0), (3, -1), "RIGHT"),
+        ("RIGHTPADDING", (3, 0), (3, -1), 4),
         ("FONTNAME", (0, -1), (-1, -1), FONT_G),
         ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#F5F5F5")),
     ]))

@@ -162,7 +162,22 @@ function addTransportRow() {
   createItemRow("transportRows", recalc);
 }
 function addAccommodationRow() {
-  createItemRow("accommodationRows", recalc);
+  const row = document.createElement("div");
+  row.className = "item-row item-row-accom";
+  const nightsOpts = [1,2,3,4,5,6,7,8,9,10].map(n =>
+    `<option value="${n}">${n}泊</option>`
+  ).join("");
+  row.innerHTML = `
+    <input type="text" placeholder="内容" class="item-desc">
+    <select class="item-nights">${nightsOpts}</select>
+    <input type="number" placeholder="金額" class="item-amount" min="0" step="1">
+    <button class="btn-remove" onclick="removeRow(this)" title="削除">&times;</button>
+  `;
+  document.getElementById("accommodationRows").appendChild(row);
+  row.querySelectorAll("input, select").forEach(el => {
+    el.addEventListener("input", recalc);
+    el.addEventListener("change", recalc);
+  });
 }
 
 function removeRow(btn) {
@@ -230,8 +245,11 @@ function sumItems(containerId) {
 function checkHighAccommodation() {
   const threshold = appConfig.highAccommodationThreshold || 30000;
   let hasHigh = false;
-  document.querySelectorAll("#accommodationRows .item-amount").forEach(inp => {
-    if ((parseInt(inp.value) || 0) > threshold) hasHigh = true;
+  document.querySelectorAll("#accommodationRows .item-row").forEach(row => {
+    const amount = parseInt(row.querySelector(".item-amount")?.value) || 0;
+    const nightsSel = row.querySelector(".item-nights");
+    const nights = nightsSel ? (parseInt(nightsSel.value) || 1) : 1;
+    if (amount > 0 && (amount / nights) > threshold) hasHigh = true;
   });
   const group = document.getElementById("highReasonGroup");
   if (hasHigh) {
@@ -341,8 +359,12 @@ function collectItems(containerId) {
   document.querySelectorAll(`#${containerId} .item-row`).forEach(row => {
     const desc = row.querySelector(".item-desc").value.trim();
     const amount = parseInt(row.querySelector(".item-amount").value) || 0;
+    const nightsSel = row.querySelector(".item-nights");
+    const nights = nightsSel ? (parseInt(nightsSel.value) || 1) : null;
     if (desc || amount) {
-      items.push({ desc, amount });
+      const item = { desc, amount };
+      if (nights !== null) item.nights = nights;
+      items.push(item);
     }
   });
   return items;
@@ -362,7 +384,7 @@ function validateClient(data) {
 
   // 高額宿泊チェック
   const threshold = appConfig.highAccommodationThreshold || 30000;
-  const hasHigh = data.accommodation_items.some(i => i.amount > threshold);
+  const hasHigh = data.accommodation_items.some(i => i.amount > 0 && (i.amount / (i.nights || 1)) > threshold);
   if (hasHigh && !data.high_accommodation_reason.trim()) {
     errors.push(`1泊${threshold.toLocaleString()}円を超える宿泊があるため、高額宿泊理由を入力してください。`);
   }

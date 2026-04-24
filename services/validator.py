@@ -68,8 +68,10 @@ def validate_submission(data: dict) -> list[str]:
         amt = item.get("amount")
         if amt is None or (isinstance(amt, (int, float)) and amt < 0):
             errors.append(f"宿泊費 {i}行目: 金額が不正です。")
-        elif isinstance(amt, (int, float)) and amt > config.HIGH_ACCOMMODATION_THRESHOLD:
-            has_high = True
+        elif isinstance(amt, (int, float)) and amt > 0:
+            nights = item.get("nights", 1) or 1
+            if amt / nights > config.HIGH_ACCOMMODATION_THRESHOLD:
+                has_high = True
 
     # 高額宿泊理由
     if has_high and not data.get("high_accommodation_reason", "").strip():
