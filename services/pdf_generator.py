@@ -132,7 +132,7 @@ def build_expense_report(output_path: str | Path, data: dict) -> int:
     summary_data = [
         ["出張期間", date_str],
         ["目  的  地", data["destination"]],
-        ["用　　件", data["purpose"]],
+        ["用　　件", Paragraph(data["purpose"].replace("\n", "<br/>"), s_body)],
         ["役　　職", role_label],
         ["区　　分", f"{trip_type}出張"],
     ]
