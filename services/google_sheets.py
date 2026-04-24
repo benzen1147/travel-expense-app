@@ -124,16 +124,9 @@ def record_expense(
         range=f"'{sheet_name}'!A:A",
     ).execute()
     next_row = len(existing.get("values", [])) + 1  # 1-indexed
-
-    sheets.spreadsheets().values().update(
-        spreadsheetId=ss_id,
-        range=f"'{sheet_name}'!A{next_row}",
-        valueInputOption="USER_ENTERED",
-        body={"values": [row]},
-    ).execute()
-
-    # 追加した行の書式をリセット（ヘッダー行の装飾・行高を引き継がない）
     row_idx = next_row - 1  # 0-indexed
+
+    # 先に書式をリセット（データ書き込み前に実行）
     sheets.spreadsheets().batchUpdate(
         spreadsheetId=ss_id,
         body={"requests": [
@@ -175,7 +168,7 @@ def record_expense(
                     "fields": "userEnteredFormat(horizontalAlignment)",
                 },
             },
-            # N列(DriveフォルダURL, index=13): 左寄せ・青文字・下線
+            # N列(DriveフォルダURL, index=13): 左寄せ
             {
                 "repeatCell": {
                     "range": {
@@ -188,15 +181,9 @@ def record_expense(
                     "cell": {
                         "userEnteredFormat": {
                             "horizontalAlignment": "LEFT",
-                            "textFormat": {
-                                "foregroundColor": {
-                                    "red": 0.067, "green": 0.333, "blue": 0.8,
-                                },
-                                "underline": True,
-                            },
                         },
                     },
-                    "fields": "userEnteredFormat(horizontalAlignment,textFormat)",
+                    "fields": "userEnteredFormat(horizontalAlignment)",
                 },
             },
             # 行高リセット
@@ -213,6 +200,14 @@ def record_expense(
                 },
             },
         ]},
+    ).execute()
+
+    # 書式リセット後にデータ書き込み（URLの自動リンク検出が保持される）
+    sheets.spreadsheets().values().update(
+        spreadsheetId=ss_id,
+        range=f"'{sheet_name}'!A{next_row}",
+        valueInputOption="USER_ENTERED",
+        body={"values": [row]},
     ).execute()
 
     sheet_url = f"https://docs.google.com/spreadsheets/d/{ss_id}/edit#gid={sheet_gid}"
