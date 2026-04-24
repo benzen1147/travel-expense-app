@@ -111,10 +111,14 @@ def get_config():
 # ──────────────────────────────
 @app.route("/api/auth/status")
 def auth_status():
-    from services.google_auth import is_authenticated
+    from services.google_auth import get_credentials, is_authenticated
     creds_configured = bool(config.GOOGLE_CLIENT_ID and config.GOOGLE_CLIENT_SECRET)
+    # トークンが存在するだけでなく、実際に有効かチェック
+    token_exists = is_authenticated()
+    creds_valid = get_credentials() is not None if token_exists else False
     return jsonify({
-        "authenticated": is_authenticated(),
+        "authenticated": creds_valid,
+        "tokenExists": token_exists,
         "credentialsConfigured": creds_configured,
     })
 

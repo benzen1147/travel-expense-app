@@ -103,13 +103,20 @@ async function checkAuth() {
     if (data.authenticated) {
       statusEl.textContent = "Google連携: 認証済み";
       statusEl.className = "status ok";
-      btnEl.style.display = "none";
+      btnEl.textContent = "再認証";
+      btnEl.style.display = "inline-flex";
+    } else if (data.tokenExists && !data.authenticated) {
+      statusEl.textContent = "Google連携: トークン期限切れ（再認証してください）";
+      statusEl.className = "status no";
+      btnEl.textContent = "再認証";
+      btnEl.style.display = "inline-flex";
     } else if (data.credentialsConfigured) {
       statusEl.textContent = "Google連携: 未認証（認証するとDrive/Sheets保存が使えます）";
       statusEl.className = "status no";
+      btnEl.textContent = "Google認証";
       btnEl.style.display = "inline-flex";
     } else {
-      statusEl.textContent = "Google連携: credentials.json未設定（PDF生成のみ利用可能）";
+      statusEl.textContent = "Google連携: 未設定（PDF生成のみ利用可能）";
       statusEl.className = "status no";
       btnEl.style.display = "none";
     }
