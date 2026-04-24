@@ -247,27 +247,5 @@ def build_expense_report(output_path: str | Path, data: dict) -> int:
         story.append(Paragraph(reason, s_body))
         story.append(Spacer(1, 3 * mm))
 
-    # ── 押印欄 ──
-    story.append(HRFlowable(
-        width="100%", thickness=0.5, color=colors.HexColor("#AAAAAA"),
-    ))
-    story.append(Spacer(1, 2 * mm))
-    seal_data = [
-        ["申請者", "確認者", "承認者（代表社員）"],
-        ["\n\n\n\n", "\n\n\n\n", "\n\n\n\n"],
-    ]
-    seal = Table(seal_data, colWidths=[56 * mm, 56 * mm, 58 * mm])
-    seal.setStyle(TableStyle([
-        ("FONTNAME", (0, 0), (-1, -1), FONT_G),
-        ("FONTSIZE", (0, 0), (-1, 0), 8),
-        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F0F0F0")),
-        ("GRID", (0, 0), (-1, -1), 0.5, grid_c),
-        ("TOPPADDING", (0, 0), (-1, 0), 3),
-        ("BOTTOMPADDING", (0, 0), (-1, 0), 3),
-        ("ROWHEIGHT", (0, 1), (-1, 1), 18 * mm),
-    ]))
-    story.append(seal)
-
     doc.build(story)
     return grand_total
