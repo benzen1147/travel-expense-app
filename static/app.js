@@ -2,7 +2,6 @@
 
 let appConfig = {};
 let uploadedFiles = [];
-let googleAuthenticated = false;
 
 // ── 初期化 ──
 document.addEventListener("DOMContentLoaded", async () => {
@@ -101,7 +100,6 @@ async function checkAuth() {
     const statusEl = document.getElementById("authStatus");
     const btnEl = document.getElementById("authBtn");
 
-    googleAuthenticated = data.authenticated;
     if (data.authenticated) {
       statusEl.textContent = "Google連携: 認証済み";
       statusEl.className = "status ok";
@@ -317,9 +315,6 @@ async function submitForm() {
 
   showSpinner();
 
-  // Google認証済みの場合のみ、ポップアップブロック回避用に先にタブを開く
-  const driveTab = googleAuthenticated ? window.open("about:blank", "_blank") : null;
-
   try {
     const formData = new FormData();
     formData.append("data", JSON.stringify(data));
@@ -331,21 +326,12 @@ async function submitForm() {
     hideSpinner();
 
     if (!result.success) {
-      if (driveTab) driveTab.close();
       showErrors(result.errors || ["不明なエラーが発生しました。"]);
       return;
     }
 
-    // Drive保存成功時: 事前に開いたタブをフォルダURLに遷移
-    if (result.folderUrl && driveTab && !driveTab.closed) {
-      driveTab.location.href = result.folderUrl;
-    } else if (driveTab) {
-      driveTab.close();
-    }
-
     showResult(result);
   } catch (e) {
-    if (driveTab) driveTab.close();
     hideSpinner();
     showErrors([`通信エラー: ${e.message}`]);
   }
