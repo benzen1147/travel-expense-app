@@ -28,6 +28,19 @@ config.OUTPUT_DIR.mkdir(exist_ok=True)
 
 
 # ──────────────────────────────
+# エラーハンドラ（HTMLではなくJSONで返す）
+# ──────────────────────────────
+@app.errorhandler(413)
+def too_large(e):
+    return jsonify({"success": False, "errors": ["ファイルサイズが大きすぎます（上限50MB）。"]}), 413
+
+
+@app.errorhandler(500)
+def internal_error(e):
+    return jsonify({"success": False, "errors": [f"サーバー内部エラー: {e}"]}), 500
+
+
+# ──────────────────────────────
 # SPA
 # ──────────────────────────────
 @app.route("/")

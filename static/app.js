@@ -321,6 +321,11 @@ async function submitForm() {
     uploadedFiles.forEach(f => formData.append("receipts", f));
 
     const res = await fetch("/api/submit", { method: "POST", body: formData });
+    const contentType = res.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      const text = await res.text();
+      throw new Error(`サーバーエラー (${res.status}): ${text.slice(0, 200)}`);
+    }
     const result = await res.json();
 
     hideSpinner();
