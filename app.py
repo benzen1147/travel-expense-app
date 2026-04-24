@@ -245,7 +245,8 @@ def submit():
         # PDF生成
         dep = form_data["departure_date"]
         dest = form_data["destination"].replace("/", "_").replace(" ", "_")
-        base_name = f"{dep.strftime('%Y%m%d')}_出張旅費精算書_{dest}"
+        applicant = form_data["applicant_name"].replace("　", "").replace(" ", "")
+        base_name = f"{dep.strftime('%Y%m%d')}_{applicant}_出張旅費精算書兼報告書_{dest}"
         report_pdf = config.OUTPUT_DIR / f"{base_name}.pdf"
 
         grand_total = build_expense_report(str(report_pdf), form_data)
