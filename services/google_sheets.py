@@ -132,11 +132,12 @@ def record_expense(
         body={"values": [row]},
     ).execute()
 
-    # 追加した行の書式をリセット（ヘッダー行の装飾・行高を引き���がない）
+    # 追加した行の書式をリセット（ヘッダー行の装飾・行高を引き継がない）
     row_idx = next_row - 1  # 0-indexed
     sheets.spreadsheets().batchUpdate(
         spreadsheetId=ss_id,
         body={"requests": [
+            # 全列: 太字OFF・白背景・中央揃え
             {
                 "repeatCell": {
                     "range": {
@@ -150,11 +151,49 @@ def record_expense(
                             "backgroundColor": {
                                 "red": 1.0, "green": 1.0, "blue": 1.0,
                             },
+                            "horizontalAlignment": "CENTER",
                         },
                     },
-                    "fields": "userEnteredFormat(textFormat,backgroundColor)",
+                    "fields": "userEnteredFormat(textFormat,backgroundColor,horizontalAlignment)",
                 },
             },
+            # H列(用件, index=7): 左寄せ
+            {
+                "repeatCell": {
+                    "range": {
+                        "sheetId": sheet_gid,
+                        "startRowIndex": row_idx,
+                        "endRowIndex": row_idx + 1,
+                        "startColumnIndex": 7,
+                        "endColumnIndex": 8,
+                    },
+                    "cell": {
+                        "userEnteredFormat": {
+                            "horizontalAlignment": "LEFT",
+                        },
+                    },
+                    "fields": "userEnteredFormat(horizontalAlignment)",
+                },
+            },
+            # N列(DriveフォルダURL, index=13): 左寄せ
+            {
+                "repeatCell": {
+                    "range": {
+                        "sheetId": sheet_gid,
+                        "startRowIndex": row_idx,
+                        "endRowIndex": row_idx + 1,
+                        "startColumnIndex": 13,
+                        "endColumnIndex": 14,
+                    },
+                    "cell": {
+                        "userEnteredFormat": {
+                            "horizontalAlignment": "LEFT",
+                        },
+                    },
+                    "fields": "userEnteredFormat(horizontalAlignment)",
+                },
+            },
+            # 行高リセット
             {
                 "updateDimensionProperties": {
                     "range": {
