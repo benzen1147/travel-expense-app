@@ -178,20 +178,16 @@ def auth_callback():
         creds, token_json = exchange_code(code)
 
         # Render等のエフェメラル環境向け：
-        # 環境変数 GOOGLE_TOKEN_JSON が未設定なら、トークンを表示して設定を促す
-        env_token = os.environ.get("GOOGLE_TOKEN_JSON", "").strip()
-        if not env_token:
-            return (
-                "<html><body style='font-family:sans-serif;max-width:700px;margin:40px auto;'>"
-                "<h2>Google認証成功</h2>"
-                "<p>以下のトークンJSONを Render の環境変数 <code>GOOGLE_TOKEN_JSON</code> に設定してください。</p>"
-                "<p>設定後、Manual Deploy すれば永続的に認証が維持されます。</p>"
-                f"<textarea style='width:100%;height:200px;font-size:12px'>{token_json}</textarea>"
-                "<br><br><a href='/'>アプリに戻る（今回のセッションは認証済み）</a>"
-                "</body></html>"
-            )
-
-        return redirect("/?auth=success")
+        # 常にトークンJSONを表示して環境変数への設定を促す
+        return (
+            "<html><body style='font-family:sans-serif;max-width:700px;margin:40px auto;'>"
+            "<h2>Google認証成功</h2>"
+            "<p>以下のトークンJSONを Render の環境変数 <code>GOOGLE_TOKEN_JSON</code> に設定（上書き）してください。</p>"
+            "<p>設定後、Manual Deploy すれば永続的に認証が維持されます。</p>"
+            f"<textarea style='width:100%;height:200px;font-size:12px'>{token_json}</textarea>"
+            "<br><br><a href='/'>アプリに戻る（今回のセッションは認証済み）</a>"
+            "</body></html>"
+        )
     except Exception as e:
         return f"認証エラー: {e}", 500
 
