@@ -17,7 +17,9 @@ COMPANY_NAME = "合同会社mofu"
 
 # 出張者マスタ
 TRAVELERS = [
-    {"name": "梶原　明", "role": "representative"},
+    {"name": "梶原　紹良", "role": "representative", "default": True},
+    {"name": "梶原　萌花", "role": "representative"},
+    {"name": "梶原　章可", "role": "representative"},
 ]
 
 # 日当単価

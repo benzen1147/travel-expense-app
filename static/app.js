@@ -44,13 +44,23 @@ async function loadConfig() {
 
 function populateTravelers() {
   const sel = document.getElementById("applicantName");
+  let defaultName = "";
   (appConfig.travelers || []).forEach(t => {
     const opt = document.createElement("option");
     opt.value = t.name;
     opt.textContent = t.name;
     opt.dataset.role = t.role;
     sel.appendChild(opt);
+    if (t.default) defaultName = t.name;
   });
+  // デフォルト選択
+  if (defaultName) {
+    sel.value = defaultName;
+    const selected = sel.options[sel.selectedIndex];
+    if (selected && selected.dataset.role) {
+      document.getElementById("applicantRole").value = selected.dataset.role;
+    }
+  }
   // 名前選択時に役職を自動設定
   sel.addEventListener("change", () => {
     const selected = sel.options[sel.selectedIndex];
