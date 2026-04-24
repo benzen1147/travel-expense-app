@@ -112,7 +112,7 @@ def record_expense(
     ret_str = ret.strftime("%Y/%m/%d") if hasattr(ret, "strftime") else str(ret)
 
     row = [
-        str(submission),
+        submission,
         form_data.get("applicant_name", ""),
         role_label,
         dep_str,
@@ -129,10 +129,11 @@ def record_expense(
         form_data.get("itinerary_memo", ""),
     ]
 
+    # 日付列をフォーマット付きで書き込むため、まずRAWで追加
     sheets.spreadsheets().values().append(
         spreadsheetId=ss_id,
         range="一覧!A:O",
-        valueInputOption="USER_ENTERED",
+        valueInputOption="RAW",
         insertDataOption="INSERT_ROWS",
         body={"values": [row]},
     ).execute()
