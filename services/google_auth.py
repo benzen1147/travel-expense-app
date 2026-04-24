@@ -44,10 +44,16 @@ def _load_token_json() -> str | None:
 
 
 def _save_token(creds: Credentials):
-    """トークンをファイルに保存（ローカル用）。Render では環境変数に手動設定する。"""
+    """トークンを保存。メモリ上の環境変数も即座に更新する。"""
     token_json = creds.to_json()
-    with open(config.GOOGLE_TOKEN_FILE, "w") as f:
-        f.write(token_json)
+    # メモリ上の環境変数を更新（現セッションで即時反映）
+    os.environ["GOOGLE_TOKEN_JSON"] = token_json
+    # ファイルにも保存（ローカル用）
+    try:
+        with open(config.GOOGLE_TOKEN_FILE, "w") as f:
+            f.write(token_json)
+    except OSError:
+        pass
 
 
 def get_auth_url() -> str:
