@@ -254,7 +254,7 @@ def submit():
         # 領収書結合PDF
         merged_pdf = None
         if saved_receipts:
-            merged_pdf = config.OUTPUT_DIR / f"{base_name}_結合.pdf"
+            merged_pdf = config.OUTPUT_DIR / f"{base_name}_領収書付き.pdf"
             merge_pdfs(report_pdf, saved_receipts, merged_pdf)
 
         result = {
