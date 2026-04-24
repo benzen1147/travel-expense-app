@@ -432,6 +432,9 @@ function showResult(result) {
   }
   if (result.googleError) {
     linksHtml += `<p style="color:var(--danger); font-size:0.85rem; margin-top:8px">Google保存エラー: ${result.googleError}</p>`;
+    if (result.googleTraceback) {
+      linksHtml += `<pre style="color:var(--danger); font-size:0.75rem; margin-top:4px; white-space:pre-wrap; background:#fff5f5; padding:8px; border-radius:4px;">${result.googleTraceback}</pre>`;
+    }
   }
   links.innerHTML = linksHtml;
   panel.classList.add("show");

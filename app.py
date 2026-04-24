@@ -91,6 +91,22 @@ def health():
     checks["token_env_set"] = bool(os.environ.get("GOOGLE_TOKEN_JSON", "").strip())
     checks["client_id_set"] = bool(config.GOOGLE_CLIENT_ID)
 
+    # 4. Google Drive API テスト
+    try:
+        from services.google_auth import get_credentials
+        creds = get_credentials()
+        if creds:
+            from googleapiclient.discovery import build
+            service = build("drive", "v3", credentials=creds)
+            about = service.about().get(fields="user(displayName,emailAddress)").execute()
+            checks["drive_api"] = f"OK: {about['user']}"
+        else:
+            checks["drive_api"] = "SKIP: credentials not available"
+    except Exception as e:
+        import traceback
+        checks["drive_api"] = f"ERROR: {type(e).__name__}: {e}"
+        checks["drive_traceback"] = traceback.format_exc()[-500:]
+
     return jsonify(checks)
 
 
@@ -247,10 +263,17 @@ def submit():
                 )
                 result.update(drive_result)
             except Exception as e:
+                import traceback
                 msg = str(e).strip()
                 if not msg:
-                    msg = f"{type(e).__name__}: {repr(e)}"
+                    msg = f"{type(e).__name__}"
+                # HttpError の場合はレスポンス内容も取得
+                if hasattr(e, "resp") and hasattr(e, "content"):
+                    msg = f"{msg} (HTTP {e.resp.status}): {e.content.decode('utf-8', errors='replace')[:300]}"
+                elif hasattr(e, "args") and e.args:
+                    msg = f"{msg}: {e.args}"
                 result["googleError"] = msg
+                result["googleTraceback"] = traceback.format_exc()[-500:]
 
         return jsonify(result)
 
