@@ -241,6 +241,13 @@ textarea { resize: vertical; min-height: 60px; }
 .btn-primary:hover:not(:disabled) { opacity: 0.85; }
 .btn-secondary { background: var(--border); color: var(--text); }
 .btn-auth { background: #4285f4; color: white; font-size: 0.85rem; padding: 8px 16px; }
+.btn-drive {
+  background: #1a73e8; color: white !important; text-decoration: none !important;
+  display: inline-block; padding: 10px 20px; border-radius: 4px; font-weight: 600;
+  font-size: 0.95rem; margin-bottom: 12px;
+  transition: opacity 0.2s;
+}
+.btn-drive:hover { opacity: 0.85; }
 
 .submit-area {
   text-align: center;

@@ -315,6 +315,9 @@ async function submitForm() {
 
   showSpinner();
 
+  // ポップアップブロック回避: ユーザー操作の直後に window.open() を呼ぶ
+  const driveTab = window.open("about:blank", "_blank");
+
   try {
     const formData = new FormData();
     formData.append("data", JSON.stringify(data));
@@ -326,12 +329,21 @@ async function submitForm() {
     hideSpinner();
 
     if (!result.success) {
+      if (driveTab) driveTab.close();
       showErrors(result.errors || ["不明なエラーが発生しました。"]);
       return;
     }
 
+    // Drive保存成功時: 事前に開いたタブをフォルダURLに遷移
+    if (result.folderUrl && driveTab && !driveTab.closed) {
+      driveTab.location.href = result.folderUrl;
+    } else if (driveTab) {
+      driveTab.close();
+    }
+
     showResult(result);
   } catch (e) {
+    if (driveTab) driveTab.close();
     hideSpinner();
     showErrors([`通信エラー: ${e.message}`]);
   }
@@ -400,28 +412,29 @@ function showResult(result) {
   content.innerHTML = `<p>合計金額: <strong>¥ ${result.grandTotal.toLocaleString()}</strong></p>`;
 
   let linksHtml = "";
+
+  // Google Drive フォルダ（目立つボタン）
+  if (result.folderUrl) {
+    linksHtml += `<a href="${result.folderUrl}" target="_blank" class="btn btn-drive">Google Drive 保存先フォルダを開く</a>`;
+  }
+
+  // PDF ダウンロード
   if (result.reportPdf) {
     linksHtml += `<a href="/api/download/${encodeURIComponent(result.reportPdf)}" target="_blank">精算書PDFをダウンロード</a>`;
   }
   if (result.mergedPdf) {
     linksHtml += `<a href="/api/download/${encodeURIComponent(result.mergedPdf)}" target="_blank">結合PDF（領収書付き）をダウンロード</a>`;
   }
-  if (result.folderUrl) {
-    linksHtml += `<a href="${result.folderUrl}" target="_blank">Google Driveフォルダ</a>`;
-  }
+
+  // スプレッドシート
   if (result.sheetUrl) {
-    linksHtml += `<a href="${result.sheetUrl}" target="_blank">スプレッドシート</a>`;
+    linksHtml += `<a href="${result.sheetUrl}" target="_blank">スプレッドシートを開く</a>`;
   }
   if (result.googleError) {
     linksHtml += `<p style="color:var(--danger); font-size:0.85rem; margin-top:8px">Google保存エラー: ${result.googleError}</p>`;
   }
   links.innerHTML = linksHtml;
   panel.classList.add("show");
-
-  // Google Driveフォルダを自動で開く
-  if (result.folderUrl) {
-    window.open(result.folderUrl, "_blank");
-  }
 
   // フォーム部分を少し薄くする
   document.querySelectorAll(".section").forEach(s => s.style.opacity = "0.5");
