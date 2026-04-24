@@ -127,79 +127,100 @@ def record_expense(
     row_idx = next_row - 1  # 0-indexed
 
     # 先に書式をリセット（データ書き込み前に実行）
+    # N列(index=13)はtextFormatを設定しない（URLの自動リンク色を妨げないため）
+    requests = [
+        # A-M列(0-12): 太字OFF・白背景・中央揃え
+        {
+            "repeatCell": {
+                "range": {
+                    "sheetId": sheet_gid,
+                    "startRowIndex": row_idx,
+                    "endRowIndex": row_idx + 1,
+                    "startColumnIndex": 0,
+                    "endColumnIndex": 13,
+                },
+                "cell": {
+                    "userEnteredFormat": {
+                        "textFormat": {"bold": False},
+                        "backgroundColor": {"red": 1.0, "green": 1.0, "blue": 1.0},
+                        "horizontalAlignment": "CENTER",
+                    },
+                },
+                "fields": "userEnteredFormat(textFormat,backgroundColor,horizontalAlignment)",
+            },
+        },
+        # N列(13): 白背景・左寄せのみ（textFormat触らない）
+        {
+            "repeatCell": {
+                "range": {
+                    "sheetId": sheet_gid,
+                    "startRowIndex": row_idx,
+                    "endRowIndex": row_idx + 1,
+                    "startColumnIndex": 13,
+                    "endColumnIndex": 14,
+                },
+                "cell": {
+                    "userEnteredFormat": {
+                        "backgroundColor": {"red": 1.0, "green": 1.0, "blue": 1.0},
+                        "horizontalAlignment": "LEFT",
+                    },
+                },
+                "fields": "userEnteredFormat(backgroundColor,horizontalAlignment)",
+            },
+        },
+        # O列(14): 太字OFF・白背景・中央揃え
+        {
+            "repeatCell": {
+                "range": {
+                    "sheetId": sheet_gid,
+                    "startRowIndex": row_idx,
+                    "endRowIndex": row_idx + 1,
+                    "startColumnIndex": 14,
+                    "endColumnIndex": 15,
+                },
+                "cell": {
+                    "userEnteredFormat": {
+                        "textFormat": {"bold": False},
+                        "backgroundColor": {"red": 1.0, "green": 1.0, "blue": 1.0},
+                        "horizontalAlignment": "CENTER",
+                    },
+                },
+                "fields": "userEnteredFormat(textFormat,backgroundColor,horizontalAlignment)",
+            },
+        },
+        # H列(7): 左寄せ上書き
+        {
+            "repeatCell": {
+                "range": {
+                    "sheetId": sheet_gid,
+                    "startRowIndex": row_idx,
+                    "endRowIndex": row_idx + 1,
+                    "startColumnIndex": 7,
+                    "endColumnIndex": 8,
+                },
+                "cell": {
+                    "userEnteredFormat": {"horizontalAlignment": "LEFT"},
+                },
+                "fields": "userEnteredFormat(horizontalAlignment)",
+            },
+        },
+        # 行高リセット
+        {
+            "updateDimensionProperties": {
+                "range": {
+                    "sheetId": sheet_gid,
+                    "dimension": "ROWS",
+                    "startIndex": row_idx,
+                    "endIndex": row_idx + 1,
+                },
+                "properties": {"pixelSize": 21},
+                "fields": "pixelSize",
+            },
+        },
+    ]
     sheets.spreadsheets().batchUpdate(
         spreadsheetId=ss_id,
-        body={"requests": [
-            # 全列: 太字OFF・白背景・中央揃え
-            {
-                "repeatCell": {
-                    "range": {
-                        "sheetId": sheet_gid,
-                        "startRowIndex": row_idx,
-                        "endRowIndex": row_idx + 1,
-                    },
-                    "cell": {
-                        "userEnteredFormat": {
-                            "textFormat": {"bold": False},
-                            "backgroundColor": {
-                                "red": 1.0, "green": 1.0, "blue": 1.0,
-                            },
-                            "horizontalAlignment": "CENTER",
-                        },
-                    },
-                    "fields": "userEnteredFormat(textFormat,backgroundColor,horizontalAlignment)",
-                },
-            },
-            # H列(用件, index=7): 左寄せ
-            {
-                "repeatCell": {
-                    "range": {
-                        "sheetId": sheet_gid,
-                        "startRowIndex": row_idx,
-                        "endRowIndex": row_idx + 1,
-                        "startColumnIndex": 7,
-                        "endColumnIndex": 8,
-                    },
-                    "cell": {
-                        "userEnteredFormat": {
-                            "horizontalAlignment": "LEFT",
-                        },
-                    },
-                    "fields": "userEnteredFormat(horizontalAlignment)",
-                },
-            },
-            # N列(DriveフォルダURL, index=13): 左寄せ
-            {
-                "repeatCell": {
-                    "range": {
-                        "sheetId": sheet_gid,
-                        "startRowIndex": row_idx,
-                        "endRowIndex": row_idx + 1,
-                        "startColumnIndex": 13,
-                        "endColumnIndex": 14,
-                    },
-                    "cell": {
-                        "userEnteredFormat": {
-                            "horizontalAlignment": "LEFT",
-                        },
-                    },
-                    "fields": "userEnteredFormat(horizontalAlignment)",
-                },
-            },
-            # 行高リセット
-            {
-                "updateDimensionProperties": {
-                    "range": {
-                        "sheetId": sheet_gid,
-                        "dimension": "ROWS",
-                        "startIndex": row_idx,
-                        "endIndex": row_idx + 1,
-                    },
-                    "properties": {"pixelSize": 21},
-                    "fields": "pixelSize",
-                },
-            },
-        ]},
+        body={"requests": requests},
     ).execute()
 
     # 書式リセット後にデータ書き込み（URLの自動リンク検出が保持される）
