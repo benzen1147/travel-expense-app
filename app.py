@@ -109,6 +109,18 @@ def health():
             drive = build("drive", "v3", credentials=creds)
             about = drive.about().get(fields="user(displayName,emailAddress)").execute()
             checks["drive_api"] = f"OK: {about['user']}"
+            # 共有フォルダアクセステスト
+            try:
+                target_folder = config.DRIVE_PARENT_FOLDER_ID
+                folder_info = drive.files().get(
+                    fileId=target_folder,
+                    fields="id,name,mimeType,capabilities",
+                    supportsAllDrives=True,
+                ).execute()
+                checks["shared_folder"] = f"OK: {folder_info.get('name')}"
+                checks["shared_folder_writable"] = folder_info.get("capabilities", {}).get("canAddChildren", False)
+            except Exception as e:
+                checks["shared_folder"] = f"ERROR: {e}"
             # Sheets
             sheets = build("sheets", "v4", credentials=creds)
             sheets.spreadsheets().create(
