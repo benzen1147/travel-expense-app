@@ -5,8 +5,12 @@ import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
-UPLOAD_DIR = BASE_DIR / "uploads"
-OUTPUT_DIR = BASE_DIR / "output"
+
+# Render等の本番環境では /tmp を使う（エフェメラルだが書き込み可能）
+_on_render = bool(os.environ.get("RENDER"))
+_storage_base = Path("/tmp") if _on_render else BASE_DIR
+UPLOAD_DIR = _storage_base / "uploads"
+OUTPUT_DIR = _storage_base / "output"
 
 # アップロード設定
 MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50MB
