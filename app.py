@@ -91,21 +91,30 @@ def health():
     checks["token_env_set"] = bool(os.environ.get("GOOGLE_TOKEN_JSON", "").strip())
     checks["client_id_set"] = bool(config.GOOGLE_CLIENT_ID)
 
-    # 4. Google Drive API テスト
+    # 4. Google API テスト
     try:
         from services.google_auth import get_credentials
         creds = get_credentials()
         if creds:
             from googleapiclient.discovery import build
-            service = build("drive", "v3", credentials=creds)
-            about = service.about().get(fields="user(displayName,emailAddress)").execute()
+            # Drive
+            drive = build("drive", "v3", credentials=creds)
+            about = drive.about().get(fields="user(displayName,emailAddress)").execute()
             checks["drive_api"] = f"OK: {about['user']}"
+            # Sheets
+            sheets = build("sheets", "v4", credentials=creds)
+            sheets.spreadsheets().create(
+                body={"properties": {"title": "__health_test__"}},
+                fields="spreadsheetId",
+            ).execute()
+            checks["sheets_api"] = "OK"
         else:
-            checks["drive_api"] = "SKIP: credentials not available"
+            checks["drive_api"] = "SKIP"
+            checks["sheets_api"] = "SKIP"
     except Exception as e:
         import traceback
-        checks["drive_api"] = f"ERROR: {type(e).__name__}: {e}"
-        checks["drive_traceback"] = traceback.format_exc()[-500:]
+        checks[f"{type(e).__name__}"] = f"{e}"
+        checks["api_traceback"] = traceback.format_exc()[-500:]
 
     return jsonify(checks)
 
