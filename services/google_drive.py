@@ -23,7 +23,10 @@ def _find_or_create_folder(
     if parent_id:
         q += f" and '{parent_id}' in parents"
 
-    results = service.files().list(q=q, spaces="drive", fields="files(id)").execute()
+    results = service.files().list(
+        q=q, spaces="drive", fields="files(id)",
+        supportsAllDrives=True, includeItemsFromAllDrives=True,
+    ).execute()
     files = results.get("files", [])
 
     if files:
@@ -36,7 +39,7 @@ def _find_or_create_folder(
     if parent_id:
         metadata["parents"] = [parent_id]
 
-    folder = service.files().create(body=metadata, fields="id").execute()
+    folder = service.files().create(body=metadata, fields="id", supportsAllDrives=True).execute()
     return folder["id"]
 
 
@@ -63,7 +66,7 @@ def _upload_file(
         "parents": [parent_id],
     }
     media = MediaFileUpload(str(file_path), mimetype=mime_type, resumable=True)
-    f = service.files().create(body=metadata, media_body=media, fields="id").execute()
+    f = service.files().create(body=metadata, media_body=media, fields="id", supportsAllDrives=True).execute()
     return f["id"]
 
 
