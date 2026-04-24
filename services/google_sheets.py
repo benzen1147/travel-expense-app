@@ -111,12 +111,13 @@ def record_expense(
     dep_str = dep.strftime("%Y/%m/%d") if hasattr(dep, "strftime") else str(dep)
     ret_str = ret.strftime("%Y/%m/%d") if hasattr(ret, "strftime") else str(ret)
 
+    # 日付の先頭に ' を付けてテキスト扱いにする（シリアル値変換を防止）
     row = [
-        submission,
+        f"'{submission}",
         form_data.get("applicant_name", ""),
         role_label,
-        dep_str,
-        ret_str,
+        f"'{dep_str}",
+        f"'{ret_str}",
         days,
         form_data.get("destination", ""),
         form_data.get("purpose", ""),
@@ -129,11 +130,10 @@ def record_expense(
         form_data.get("itinerary_memo", ""),
     ]
 
-    # 日付列をフォーマット付きで書き込むため、まずRAWで追加
     sheets.spreadsheets().values().append(
         spreadsheetId=ss_id,
         range="一覧!A:O",
-        valueInputOption="RAW",
+        valueInputOption="USER_ENTERED",
         insertDataOption="INSERT_ROWS",
         body={"values": [row]},
     ).execute()
