@@ -169,7 +169,10 @@ def submit():
                 )
                 result.update(drive_result)
             except Exception as e:
-                result["googleError"] = str(e)
+                msg = str(e).strip()
+                if not msg:
+                    msg = f"{type(e).__name__}: {repr(e)}"
+                result["googleError"] = msg
 
         return jsonify(result)
 
