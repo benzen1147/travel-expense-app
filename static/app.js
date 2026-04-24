@@ -420,15 +420,15 @@ function showResult(result) {
 
   // PDF ダウンロード
   if (result.reportPdf) {
-    linksHtml += `<a href="/api/download/${encodeURIComponent(result.reportPdf)}" target="_blank">精算書PDFをダウンロード</a>`;
+    linksHtml += `<a href="/api/download/${encodeURIComponent(result.reportPdf)}" target="_blank" class="btn btn-pdf">精算書PDFをダウンロード</a>`;
   }
   if (result.mergedPdf) {
-    linksHtml += `<a href="/api/download/${encodeURIComponent(result.mergedPdf)}" target="_blank">結合PDF（領収書付き）をダウンロード</a>`;
+    linksHtml += `<a href="/api/download/${encodeURIComponent(result.mergedPdf)}" target="_blank" class="btn btn-pdf">結合PDF（領収書付き）をダウンロード</a>`;
   }
 
   // スプレッドシート
   if (result.sheetUrl) {
-    linksHtml += `<a href="${result.sheetUrl}" target="_blank">スプレッドシートを開く</a>`;
+    linksHtml += `<a href="${result.sheetUrl}" target="_blank" class="btn btn-sheet">スプレッドシートを開く</a>`;
   }
   if (result.googleError) {
     linksHtml += `<p style="color:var(--danger); font-size:0.85rem; margin-top:8px">Google保存エラー: ${result.googleError}</p>`;

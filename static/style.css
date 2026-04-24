@@ -241,13 +241,16 @@ textarea { resize: vertical; min-height: 60px; }
 .btn-primary:hover:not(:disabled) { opacity: 0.85; }
 .btn-secondary { background: var(--border); color: var(--text); }
 .btn-auth { background: #4285f4; color: white; font-size: 0.85rem; padding: 8px 16px; }
-.btn-drive {
-  background: #1a73e8; color: white !important; text-decoration: none !important;
+.btn-drive, .btn-pdf, .btn-sheet {
+  color: white !important; text-decoration: none !important;
   display: inline-block; padding: 10px 20px; border-radius: 4px; font-weight: 600;
-  font-size: 0.95rem; margin-bottom: 12px;
+  font-size: 0.95rem; margin: 0 8px 12px 0;
   transition: opacity 0.2s;
 }
-.btn-drive:hover { opacity: 0.85; }
+.btn-drive:hover, .btn-pdf:hover, .btn-sheet:hover { opacity: 0.85; }
+.btn-drive { background: #1a73e8; }
+.btn-pdf { background: #dc3545; }
+.btn-sheet { background: #28a745; }
 
 .submit-area {
   text-align: center;
