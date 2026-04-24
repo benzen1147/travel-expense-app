@@ -85,7 +85,10 @@ def health():
         checks["pdf_traceback"] = traceback.format_exc()
 
     # 3. Google認証状態
-    checks["token_exists"] = Path(config.GOOGLE_TOKEN_FILE).exists()
+    from services.google_auth import is_authenticated
+    checks["authenticated"] = is_authenticated()
+    checks["token_file_exists"] = Path(config.GOOGLE_TOKEN_FILE).exists()
+    checks["token_env_set"] = bool(os.environ.get("GOOGLE_TOKEN_JSON", "").strip())
     checks["client_id_set"] = bool(config.GOOGLE_CLIENT_ID)
 
     return jsonify(checks)
@@ -108,10 +111,10 @@ def get_config():
 # ──────────────────────────────
 @app.route("/api/auth/status")
 def auth_status():
-    token_exists = Path(config.GOOGLE_TOKEN_FILE).exists()
+    from services.google_auth import is_authenticated
     creds_configured = bool(config.GOOGLE_CLIENT_ID and config.GOOGLE_CLIENT_SECRET)
     return jsonify({
-        "authenticated": token_exists,
+        "authenticated": is_authenticated(),
         "credentialsConfigured": creds_configured,
     })
 
@@ -143,8 +146,22 @@ def auth_callback():
 
     try:
         from services.google_auth import exchange_code
-        exchange_code(code)
-        # 認証成功後、メイン画面にリダイレクト
+        creds, token_json = exchange_code(code)
+
+        # Render等のエフェメラル環境向け：
+        # 環境変数 GOOGLE_TOKEN_JSON が未設定なら、トークンを表示して設定を促す
+        env_token = os.environ.get("GOOGLE_TOKEN_JSON", "").strip()
+        if not env_token:
+            return (
+                "<html><body style='font-family:sans-serif;max-width:700px;margin:40px auto;'>"
+                "<h2>Google認証成功</h2>"
+                "<p>以下のトークンJSONを Render の環境変数 <code>GOOGLE_TOKEN_JSON</code> に設定してください。</p>"
+                "<p>設定後、Manual Deploy すれば永続的に認証が維持されます。</p>"
+                f"<textarea style='width:100%;height:200px;font-size:12px'>{token_json}</textarea>"
+                "<br><br><a href='/'>アプリに戻る（今回のセッションは認証済み）</a>"
+                "</body></html>"
+            )
+
         return redirect("/?auth=success")
     except Exception as e:
         return f"認証エラー: {e}", 500
@@ -218,7 +235,8 @@ def submit():
         }
 
         # Google Drive / Sheets 保存（認証済みの場合のみ）
-        if Path(config.GOOGLE_TOKEN_FILE).exists():
+        from services.google_auth import is_authenticated
+        if is_authenticated():
             try:
                 drive_result = _save_to_google(
                     form_data, report_pdf, merged_pdf, saved_receipts,

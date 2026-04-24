@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 from google.auth.transport.requests import Request
@@ -29,6 +30,26 @@ def _build_client_config() -> dict:
     }
 
 
+def _load_token_json() -> str | None:
+    """環境変数 or ファイルからトークンJSONを読む。"""
+    # 環境変数優先（Render等の永続化用）
+    env_token = os.environ.get("GOOGLE_TOKEN_JSON", "").strip()
+    if env_token:
+        return env_token
+    # フォールバック: ファイル（ローカル用）
+    token_path = Path(config.GOOGLE_TOKEN_FILE)
+    if token_path.exists():
+        return token_path.read_text()
+    return None
+
+
+def _save_token(creds: Credentials):
+    """トークンをファイルに保存（ローカル用）。Render では環境変数に手動設定する。"""
+    token_json = creds.to_json()
+    with open(config.GOOGLE_TOKEN_FILE, "w") as f:
+        f.write(token_json)
+
+
 def get_auth_url() -> str:
     """認証URLを生成して返す。"""
     flow = Flow.from_client_config(
@@ -43,8 +64,8 @@ def get_auth_url() -> str:
     return auth_url
 
 
-def exchange_code(code: str) -> Credentials:
-    """認可コードをトークンに交換し、保存する。"""
+def exchange_code(code: str) -> tuple[Credentials, str]:
+    """認可コードをトークンに交換し、保存する。トークンJSONも返す。"""
     flow = Flow.from_client_config(
         _build_client_config(),
         scopes=config.GOOGLE_SCOPES,
@@ -52,12 +73,8 @@ def exchange_code(code: str) -> Credentials:
     )
     flow.fetch_token(code=code)
     creds = flow.credentials
-
-    # トークン保存
-    with open(config.GOOGLE_TOKEN_FILE, "w") as f:
-        f.write(creds.to_json())
-
-    return creds
+    _save_token(creds)
+    return creds, creds.to_json()
 
 
 def get_credentials() -> Credentials | None:
@@ -65,19 +82,20 @@ def get_credentials() -> Credentials | None:
     保存済みトークンからCredentialsを取得。
     期限切れなら自動リフレッシュ。無効なら None を返す。
     """
-    token_path = Path(config.GOOGLE_TOKEN_FILE)
-    if not token_path.exists():
+    token_json = _load_token_json()
+    if not token_json:
         return None
 
-    creds = Credentials.from_authorized_user_file(
-        str(token_path), config.GOOGLE_SCOPES,
-    )
+    try:
+        info = json.loads(token_json)
+        creds = Credentials.from_authorized_user_info(info, config.GOOGLE_SCOPES)
+    except Exception:
+        return None
 
     if creds and creds.expired and creds.refresh_token:
         try:
             creds.refresh(Request())
-            with open(config.GOOGLE_TOKEN_FILE, "w") as f:
-                f.write(creds.to_json())
+            _save_token(creds)
         except Exception:
             return None
 
@@ -85,3 +103,8 @@ def get_credentials() -> Credentials | None:
         return None
 
     return creds
+
+
+def is_authenticated() -> bool:
+    """認証済みかどうか。"""
+    return _load_token_json() is not None
