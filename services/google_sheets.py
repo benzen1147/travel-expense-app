@@ -175,7 +175,7 @@ def record_expense(
                     "fields": "userEnteredFormat(horizontalAlignment)",
                 },
             },
-            # N列(DriveフォルダURL, index=13): 左寄せ
+            # N列(DriveフォルダURL, index=13): 左寄せ・青文字・下線
             {
                 "repeatCell": {
                     "range": {
@@ -188,9 +188,15 @@ def record_expense(
                     "cell": {
                         "userEnteredFormat": {
                             "horizontalAlignment": "LEFT",
+                            "textFormat": {
+                                "foregroundColor": {
+                                    "red": 0.067, "green": 0.333, "blue": 0.8,
+                                },
+                                "underline": True,
+                            },
                         },
                     },
-                    "fields": "userEnteredFormat(horizontalAlignment)",
+                    "fields": "userEnteredFormat(horizontalAlignment,textFormat)",
                 },
             },
             # 行高リセット
