@@ -57,7 +57,9 @@ GOOGLE_SCOPES = [
 ]
 
 # Google Drive設定
-DRIVE_PARENT_FOLDER_NAME = "合同会社mofu_出張旅費精算"
+DRIVE_PARENT_FOLDER_ID = os.environ.get(
+    "GOOGLE_DRIVE_FOLDER_ID", "1Xq7H_jCqEdIBQNVEZ8jqPQIwTKYxSIdZ",
+)
 
 # Google Sheets設定
 SHEETS_SPREADSHEET_ID = os.environ.get(

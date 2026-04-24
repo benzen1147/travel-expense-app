@@ -86,8 +86,8 @@ def upload_expense_report(
     """
     service = _get_service(creds)
 
-    # 親フォルダ
-    parent_id = _find_or_create_folder(service, config.DRIVE_PARENT_FOLDER_NAME)
+    # 親フォルダ（指定の共有フォルダを直接使用）
+    parent_id = config.DRIVE_PARENT_FOLDER_ID
 
     # 個別フォルダ
     dep = form_data["departure_date"]
