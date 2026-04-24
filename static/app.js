@@ -413,20 +413,20 @@ function showResult(result) {
 
   let linksHtml = "";
 
-  // Google Drive フォルダ（目立つボタン）
+  // 1. Google Drive フォルダ
   if (result.folderUrl) {
-    linksHtml += `<a href="${result.folderUrl}" target="_blank" class="btn btn-drive">Google Drive 保存先フォルダを開く</a>`;
+    linksHtml += `<a href="${result.folderUrl}" target="_blank" class="btn btn-drive">Google ドライブを開く</a>`;
   }
 
-  // PDF ダウンロード
-  if (result.reportPdf) {
+  // 2. 精算書PDF（領収書付き）ダウンロード
+  if (result.mergedPdf) {
+    linksHtml += `<a href="/api/download/${encodeURIComponent(result.mergedPdf)}" target="_blank" class="btn btn-pdf">精算書PDF（領収書付き）をダウンロード</a>`;
+  } else if (result.reportPdf) {
+    // 領収書がない場合は精算書のみのPDFをダウンロード
     linksHtml += `<a href="/api/download/${encodeURIComponent(result.reportPdf)}" target="_blank" class="btn btn-pdf">精算書PDFをダウンロード</a>`;
   }
-  if (result.mergedPdf) {
-    linksHtml += `<a href="/api/download/${encodeURIComponent(result.mergedPdf)}" target="_blank" class="btn btn-pdf">結合PDF（領収書付き）をダウンロード</a>`;
-  }
 
-  // スプレッドシート
+  // 3. スプレッドシート
   if (result.sheetUrl) {
     linksHtml += `<a href="${result.sheetUrl}" target="_blank" class="btn btn-sheet">スプレッドシートを開く</a>`;
   }
