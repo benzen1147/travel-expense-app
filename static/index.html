@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>出張旅費精算書 - 合同会社mofu</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>出 張 旅 費 精 算 書</h1>
+      <div class="company">合同会社mofu</div>
+    </header>
+
+    <!-- Google認証バナー -->
+    <div class="auth-banner" id="authBanner">
+      <div>
+        <span class="status" id="authStatus">Google連携: 確認中...</span>
+      </div>
+      <button class="btn btn-auth" id="authBtn" style="display:none" onclick="startAuth()">
+        Google認証
+      </button>
+    </div>
+
+    <!-- エラー表示 -->
+    <div class="error-list" id="errorList">
+      <ul id="errorItems"></ul>
+    </div>
+
+    <!-- 基本情報 -->
+    <div class="section">
+      <h2>基本情報</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label>出張者名<span class="required">*必須</span></label>
+          <select id="applicantName">
+            <option value="">選択してください</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>役職<span class="required">*必須</span></label>
+          <select id="applicantRole">
+            <option value="">選択してください</option>
+            <option value="representative">代表社員</option>
+            <option value="employee">従業員</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>出発日<span class="required">*必須</span></label>
+          <input type="date" id="departureDate">
+        </div>
+        <div class="form-group">
+          <label>帰着日<span class="required">*必須</span></label>
+          <input type="date" id="returnDate">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>目的地<span class="required">*必須</span></label>
+          <input type="text" id="destination" placeholder="例: 東京都渋谷区">
+        </div>
+        <div class="form-group">
+          <label>区分</label>
+          <select id="isOverseas">
+            <option value="false">国内出張</option>
+            <option value="true">海外出張</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>用件<span class="required">*必須</span></label>
+        <input type="text" id="purpose" placeholder="例: 取引先との契約締結打合せ">
+      </div>
+      <div class="form-group">
+        <label>提出日</label>
+        <input type="date" id="submissionDate">
+      </div>
+    </div>
+
+    <!-- 交通費内訳 -->
+    <div class="section">
+      <h2>交通費内訳</h2>
+      <div class="item-rows" id="transportRows">
+        <!-- 動的に追加 -->
+      </div>
+      <button class="btn-add" onclick="addTransportRow()">＋ 交通費を追加</button>
+      <div class="subtotal">小計: <span id="transportTotal">0</span> 円</div>
+    </div>
+
+    <!-- 宿泊費内訳 -->
+    <div class="section">
+      <h2>宿泊費内訳</h2>
+      <div class="item-rows" id="accommodationRows">
+        <!-- 動的に追加 -->
+      </div>
+      <button class="btn-add" onclick="addAccommodationRow()">＋ 宿泊費を追加</button>
+      <div class="subtotal">小計: <span id="accommodationTotal">0</span> 円</div>
+      <div class="form-group high-reason-group" id="highReasonGroup">
+        <label>高額宿泊理由<span class="required">*必須</span></label>
+        <textarea id="highAccommodationReason"
+          placeholder="1泊30,000円を超える宿泊がある場合、理由を記載してください"></textarea>
+      </div>
+    </div>
+
+    <!-- 日当 & 合計 -->
+    <div class="section">
+      <h2>費用合計</h2>
+      <table class="totals-table">
+        <tr><td class="label">交通費</td><td class="amount" id="totalTransport">¥ 0</td></tr>
+        <tr><td class="label">宿泊費</td><td class="amount" id="totalAccommodation">¥ 0</td></tr>
+        <tr><td class="label">日当（<span id="allowanceDetail">-</span>）</td><td class="amount" id="totalAllowance">¥ 0</td></tr>
+        <tr class="grand"><td class="label">合　計</td><td class="amount" id="grandTotal">¥ 0</td></tr>
+      </table>
+    </div>
+
+    <!-- 備考 -->
+    <div class="section">
+      <h2>行程メモ・備考</h2>
+      <div class="form-group">
+        <label>行程メモ（任意）</label>
+        <textarea id="itineraryMemo" rows="3" placeholder="移動経路や訪問先など"></textarea>
+      </div>
+    </div>
+
+    <!-- 領収書添付 -->
+    <div class="section">
+      <h2>領収書添付</h2>
+      <div class="drop-zone" id="dropZone">
+        <p>ファイルをドラッグ＆ドロップ<br>またはクリックして選択</p>
+        <p style="font-size:0.8rem; margin-top:8px">PDF / 画像（PNG, JPG等）対応</p>
+        <input type="file" id="fileInput" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.bmp,.tiff,.webp">
+      </div>
+      <div class="file-list" id="fileList"></div>
+    </div>
+
+    <!-- 送信 -->
+    <div class="submit-area">
+      <button class="btn btn-primary" id="submitBtn" onclick="submitForm()">
+        精算書を作成する
+      </button>
+    </div>
+
+    <!-- 結果 -->
+    <div class="result-panel" id="resultPanel">
+      <h3>精算書を作成しました</h3>
+      <div id="resultContent"></div>
+      <div class="result-links" id="resultLinks"></div>
+      <div style="margin-top:16px">
+        <button class="btn btn-secondary" onclick="resetForm()">新しい精算書を作成</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- スピナー -->
+  <div class="spinner-overlay" id="spinner">
+    <div class="spinner-box">
+      <div class="spinner"></div>
+      <div>処理中...</div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
