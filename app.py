@@ -257,23 +257,10 @@ def submit():
         # Google Drive / Sheets 保存（認証済みの場合のみ）
         from services.google_auth import is_authenticated
         if is_authenticated():
-            try:
-                drive_result = _save_to_google(
-                    form_data, report_pdf, merged_pdf, saved_receipts,
-                )
-                result.update(drive_result)
-            except Exception as e:
-                import traceback
-                msg = str(e).strip()
-                if not msg:
-                    msg = f"{type(e).__name__}"
-                # HttpError の場合はレスポンス内容も取得
-                if hasattr(e, "resp") and hasattr(e, "content"):
-                    msg = f"{msg} (HTTP {e.resp.status}): {e.content.decode('utf-8', errors='replace')[:300]}"
-                elif hasattr(e, "args") and e.args:
-                    msg = f"{msg}: {e.args}"
-                result["googleError"] = msg
-                result["googleTraceback"] = traceback.format_exc()[-500:]
+            drive_result = _save_to_google(
+                form_data, report_pdf, merged_pdf, saved_receipts,
+            )
+            result.update(drive_result)
 
         return jsonify(result)
 
@@ -289,7 +276,7 @@ def _save_to_google(
     merged_pdf: Path | None,
     receipt_paths: list[Path],
 ) -> dict:
-    """Google Drive & Sheets に保存。"""
+    """Google Drive & Sheets に保存。それぞれ独立して実行。"""
     from services.google_auth import get_credentials
     from services.google_drive import upload_expense_report
     from services.google_sheets import record_expense
@@ -298,23 +285,37 @@ def _save_to_google(
     if not creds:
         return {}
 
+    result = {}
+    errors = []
+
     # Drive保存
-    drive_info = upload_expense_report(
-        creds=creds,
-        form_data=form_data,
-        report_pdf=report_pdf,
-        merged_pdf=merged_pdf,
-        receipt_paths=receipt_paths,
-    )
+    try:
+        drive_info = upload_expense_report(
+            creds=creds,
+            form_data=form_data,
+            report_pdf=report_pdf,
+            merged_pdf=merged_pdf,
+            receipt_paths=receipt_paths,
+        )
+        result.update(drive_info)
+    except Exception as e:
+        errors.append(f"Drive: {e}")
 
     # Sheets記録
-    sheets_info = record_expense(
-        creds=creds,
-        form_data=form_data,
-        folder_url=drive_info.get("folderUrl", ""),
-    )
+    try:
+        sheets_info = record_expense(
+            creds=creds,
+            form_data=form_data,
+            folder_url=result.get("folderUrl", ""),
+        )
+        result.update(sheets_info)
+    except Exception as e:
+        errors.append(f"Sheets: {e}")
 
-    return {**drive_info, **sheets_info}
+    if errors:
+        result["googleError"] = " / ".join(errors)
+
+    return result
 
 
 # ──────────────────────────────
