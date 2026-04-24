@@ -132,28 +132,42 @@ def record_expense(
         body={"values": [row]},
     ).execute()
 
-    # 追加した行の書式をリセット（ヘッダー行の装飾を引き継がない）
+    # 追加した行の書式をリセット（ヘッダー行の装飾・行高を引き���がない）
     row_idx = next_row - 1  # 0-indexed
     sheets.spreadsheets().batchUpdate(
         spreadsheetId=ss_id,
-        body={"requests": [{
-            "repeatCell": {
-                "range": {
-                    "sheetId": sheet_gid,
-                    "startRowIndex": row_idx,
-                    "endRowIndex": row_idx + 1,
-                },
-                "cell": {
-                    "userEnteredFormat": {
-                        "textFormat": {"bold": False},
-                        "backgroundColor": {
-                            "red": 1.0, "green": 1.0, "blue": 1.0,
+        body={"requests": [
+            {
+                "repeatCell": {
+                    "range": {
+                        "sheetId": sheet_gid,
+                        "startRowIndex": row_idx,
+                        "endRowIndex": row_idx + 1,
+                    },
+                    "cell": {
+                        "userEnteredFormat": {
+                            "textFormat": {"bold": False},
+                            "backgroundColor": {
+                                "red": 1.0, "green": 1.0, "blue": 1.0,
+                            },
                         },
                     },
+                    "fields": "userEnteredFormat(textFormat,backgroundColor)",
                 },
-                "fields": "userEnteredFormat(textFormat,backgroundColor)",
             },
-        }]},
+            {
+                "updateDimensionProperties": {
+                    "range": {
+                        "sheetId": sheet_gid,
+                        "dimension": "ROWS",
+                        "startIndex": row_idx,
+                        "endIndex": row_idx + 1,
+                    },
+                    "properties": {"pixelSize": 21},
+                    "fields": "pixelSize",
+                },
+            },
+        ]},
     ).execute()
 
     sheet_url = f"https://docs.google.com/spreadsheets/d/{ss_id}/edit#gid={sheet_gid}"
