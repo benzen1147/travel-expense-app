@@ -106,7 +106,7 @@ def record_expense(
         accommodation_total,
         allowance,
         grand_total,
-        f'=HYPERLINK("{folder_url}","Drive")' if folder_url else "",
+        folder_url,
         form_data.get("itinerary_memo", ""),
     ]
 
