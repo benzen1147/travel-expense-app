@@ -49,6 +49,49 @@ def index():
 
 
 # ──────────────────────────────
+# ヘルスチェック（PDF生成テスト）
+# ──────────────────────────────
+@app.route("/api/health")
+def health():
+    """Render上での動作確認用。"""
+    import traceback
+    checks = {}
+    # 1. ディレクトリ
+    checks["output_dir"] = str(config.OUTPUT_DIR)
+    checks["output_writable"] = os.access(str(config.OUTPUT_DIR), os.W_OK)
+    checks["upload_dir_exists"] = config.UPLOAD_DIR.exists()
+
+    # 2. PDF生成テスト
+    try:
+        from services.pdf_generator import build_expense_report
+        test_path = config.OUTPUT_DIR / "_health_test.pdf"
+        build_expense_report(str(test_path), {
+            "applicant_name": "テスト",
+            "applicant_role": "employee",
+            "departure_date": date(2026, 1, 1),
+            "return_date": date(2026, 1, 2),
+            "destination": "テスト",
+            "purpose": "テスト",
+            "transport_items": [],
+            "accommodation_items": [],
+            "is_overseas": False,
+            "submission_date": date(2026, 1, 1),
+        })
+        checks["pdf_generation"] = "OK"
+        if test_path.exists():
+            test_path.unlink()
+    except Exception as e:
+        checks["pdf_generation"] = f"ERROR: {type(e).__name__}: {e}"
+        checks["pdf_traceback"] = traceback.format_exc()
+
+    # 3. Google認証状態
+    checks["token_exists"] = Path(config.GOOGLE_TOKEN_FILE).exists()
+    checks["client_id_set"] = bool(config.GOOGLE_CLIENT_ID)
+
+    return jsonify(checks)
+
+
+# ──────────────────────────────
 # 設定取得
 # ──────────────────────────────
 @app.route("/api/config")
