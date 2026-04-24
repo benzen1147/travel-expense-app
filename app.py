@@ -236,7 +236,7 @@ def submit():
         # PDF生成
         dep = form_data["departure_date"]
         dest = form_data["destination"].replace("/", "_").replace(" ", "_")
-        base_name = f"出張旅費精算書_{dep.strftime('%Y%m%d')}_{dest}"
+        base_name = f"{dep.strftime('%Y%m%d')}_出張旅費精算書_{dest}"
         report_pdf = config.OUTPUT_DIR / f"{base_name}.pdf"
 
         grand_total = build_expense_report(str(report_pdf), form_data)
@@ -288,6 +288,14 @@ def _save_to_google(
     result = {}
     errors = []
 
+    def _err_msg(label: str, e: Exception) -> str:
+        msg = str(e).strip()
+        if not msg:
+            msg = type(e).__name__
+        if hasattr(e, "resp") and hasattr(e, "content"):
+            msg = f"{msg} (HTTP {e.resp.status})"
+        return f"{label}: {msg}"
+
     # Drive保存
     try:
         drive_info = upload_expense_report(
@@ -299,7 +307,7 @@ def _save_to_google(
         )
         result.update(drive_info)
     except Exception as e:
-        errors.append(f"Drive: {e}")
+        errors.append(_err_msg("Drive", e))
 
     # Sheets記録
     try:
@@ -310,7 +318,7 @@ def _save_to_google(
         )
         result.update(sheets_info)
     except Exception as e:
-        errors.append(f"Sheets: {e}")
+        errors.append(_err_msg("Sheets", e))
 
     if errors:
         result["googleError"] = " / ".join(errors)
