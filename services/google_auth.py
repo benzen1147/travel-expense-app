@@ -94,7 +94,8 @@ def get_credentials() -> Credentials | None:
 
     try:
         info = json.loads(token_json)
-        creds = Credentials.from_authorized_user_info(info, config.GOOGLE_SCOPES)
+        # スコープ検証はGoogle側で行うため、クライアント側では指定しない
+        creds = Credentials.from_authorized_user_info(info)
     except Exception:
         return None
 
