@@ -2,6 +2,7 @@
 
 let appConfig = {};
 let uploadedFiles = [];
+let googleAuthenticated = false;
 
 // ── 初期化 ──
 document.addEventListener("DOMContentLoaded", async () => {
@@ -100,6 +101,7 @@ async function checkAuth() {
     const statusEl = document.getElementById("authStatus");
     const btnEl = document.getElementById("authBtn");
 
+    googleAuthenticated = data.authenticated;
     if (data.authenticated) {
       statusEl.textContent = "Google連携: 認証済み";
       statusEl.className = "status ok";
@@ -315,8 +317,8 @@ async function submitForm() {
 
   showSpinner();
 
-  // ポップアップブロック回避: ユーザー操作の直後に window.open() を呼ぶ
-  const driveTab = window.open("about:blank", "_blank");
+  // Google認証済みの場合のみ、ポップアップブロック回避用に先にタブを開く
+  const driveTab = googleAuthenticated ? window.open("about:blank", "_blank") : null;
 
   try {
     const formData = new FormData();
@@ -435,6 +437,9 @@ function showResult(result) {
   }
   links.innerHTML = linksHtml;
   panel.classList.add("show");
+
+  // 結果パネルにスクロール
+  panel.scrollIntoView({ behavior: "smooth", block: "start" });
 
   // フォーム部分を少し薄くする
   document.querySelectorAll(".section").forEach(s => s.style.opacity = "0.5");
