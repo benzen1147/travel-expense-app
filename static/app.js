@@ -418,6 +418,11 @@ function showResult(result) {
   links.innerHTML = linksHtml;
   panel.classList.add("show");
 
+  // Google Driveフォルダを自動で開く
+  if (result.folderUrl) {
+    window.open(result.folderUrl, "_blank");
+  }
+
   // フォーム部分を少し薄くする
   document.querySelectorAll(".section").forEach(s => s.style.opacity = "0.5");
   document.getElementById("submitBtn").disabled = true;
