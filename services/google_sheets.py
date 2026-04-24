@@ -15,11 +15,15 @@ def _get_drive_service(creds: Credentials):
     return build("drive", "v3", credentials=creds)
 
 
-def _find_or_create_spreadsheet(creds: Credentials) -> str:
+def _get_spreadsheet_id(creds: Credentials) -> str:
     """
-    「出張旅費一覧」スプレッドシートを検索し、なければ作成。
-    スプレッドシートIDを返す。
+    環境変数で指定されたスプレッドシートIDを使う。
+    未設定の場合のみ名前で検索し、なければ新規作成。
     """
+    # 環境変数で固定IDが指定されている場合はそれを使う
+    if config.SHEETS_SPREADSHEET_ID:
+        return config.SHEETS_SPREADSHEET_ID
+
     drive = _get_drive_service(creds)
     q = (
         f"name='{config.SHEETS_NAME}' "
@@ -43,35 +47,11 @@ def _find_or_create_spreadsheet(creds: Credentials) -> str:
     ss = sheets.spreadsheets().create(body=body, fields="spreadsheetId").execute()
     ss_id = ss["spreadsheetId"]
 
-    # ヘッダー行を設定
     sheets.spreadsheets().values().update(
         spreadsheetId=ss_id,
         range="一覧!A1",
         valueInputOption="RAW",
         body={"values": [config.SHEETS_HEADERS]},
-    ).execute()
-
-    # ヘッダー行を太字にする
-    sheets.spreadsheets().batchUpdate(
-        spreadsheetId=ss_id,
-        body={"requests": [{
-            "repeatCell": {
-                "range": {
-                    "sheetId": 0,
-                    "startRowIndex": 0,
-                    "endRowIndex": 1,
-                },
-                "cell": {
-                    "userEnteredFormat": {
-                        "textFormat": {"bold": True},
-                        "backgroundColor": {
-                            "red": 0.85, "green": 0.92, "blue": 1.0,
-                        },
-                    },
-                },
-                "fields": "userEnteredFormat(textFormat,backgroundColor)",
-            },
-        }]},
     ).execute()
 
     return ss_id
@@ -85,7 +65,7 @@ def record_expense(
     """
     スプレッドシートに精算データを1行追加。
     """
-    ss_id = _find_or_create_spreadsheet(creds)
+    ss_id = _get_spreadsheet_id(creds)
     sheets = _get_service(creds)
 
     dep = form_data["departure_date"]
@@ -130,13 +110,21 @@ def record_expense(
         form_data.get("itinerary_memo", ""),
     ]
 
+    # シート名を動的に取得（最初のシートに追記）
+    ss_meta = sheets.spreadsheets().get(
+        spreadsheetId=ss_id, fields="sheets.properties(sheetId,title)",
+    ).execute()
+    first_sheet = ss_meta["sheets"][0]["properties"]
+    sheet_name = first_sheet["title"]
+    sheet_gid = first_sheet["sheetId"]
+
     sheets.spreadsheets().values().append(
         spreadsheetId=ss_id,
-        range="一覧!A:O",
+        range=f"'{sheet_name}'!A:O",
         valueInputOption="USER_ENTERED",
         insertDataOption="INSERT_ROWS",
         body={"values": [row]},
     ).execute()
 
-    sheet_url = f"https://docs.google.com/spreadsheets/d/{ss_id}"
+    sheet_url = f"https://docs.google.com/spreadsheets/d/{ss_id}/edit#gid={sheet_gid}"
     return {"sheetUrl": sheet_url, "spreadsheetId": ss_id}

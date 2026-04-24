@@ -60,6 +60,7 @@ GOOGLE_SCOPES = [
 DRIVE_PARENT_FOLDER_NAME = "合同会社mofu_出張旅費精算"
 
 # Google Sheets設定
+SHEETS_SPREADSHEET_ID = os.environ.get("GOOGLE_SHEETS_ID", "")
 SHEETS_NAME = "出張旅費一覧"
 SHEETS_HEADERS = [
     "提出日", "出張者", "役職", "出発日", "帰着日", "日数",
