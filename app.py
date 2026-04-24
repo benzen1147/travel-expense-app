@@ -85,11 +85,19 @@ def health():
         checks["pdf_traceback"] = traceback.format_exc()
 
     # 3. Google認証状態
-    from services.google_auth import is_authenticated
+    from services.google_auth import is_authenticated, get_credentials
     checks["authenticated"] = is_authenticated()
     checks["token_file_exists"] = Path(config.GOOGLE_TOKEN_FILE).exists()
     checks["token_env_set"] = bool(os.environ.get("GOOGLE_TOKEN_JSON", "").strip())
     checks["client_id_set"] = bool(config.GOOGLE_CLIENT_ID)
+    # トークンのスコープ確認
+    try:
+        token_str = os.environ.get("GOOGLE_TOKEN_JSON", "")
+        if token_str:
+            token_info = json.loads(token_str)
+            checks["token_scopes"] = token_info.get("scopes", [])
+    except Exception:
+        pass
 
     # 4. Google API テスト
     try:
