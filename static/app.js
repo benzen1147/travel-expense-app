@@ -20,11 +20,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("applicantRole").addEventListener("change", recalc);
   document.getElementById("isOverseas").addEventListener("change", recalc);
 
-  // OAuth コールバック後の通知
-  if (new URLSearchParams(location.search).get("auth") === "success") {
-    history.replaceState(null, "", "/");
-    checkAuth();
-  }
 });
 
 function todayStr() {
@@ -92,59 +87,22 @@ function populateTravelers() {
   });
 }
 
-// ── Google認証 ──
+// ── Google連携ステータス ──
 async function checkAuth() {
   try {
     const res = await fetch("/api/auth/status");
     const data = await res.json();
     const statusEl = document.getElementById("authStatus");
-    const btnEl = document.getElementById("authBtn");
 
     if (data.authenticated) {
-      statusEl.textContent = "Google連携: 認証済み";
+      statusEl.textContent = "Google連携: 有効";
       statusEl.className = "status ok";
-      btnEl.textContent = "再認証";
-      btnEl.style.display = "inline-flex";
-    } else if (data.tokenExists && !data.authenticated) {
-      statusEl.textContent = "Google連携: トークン期限切れ（再認証してください）";
-      statusEl.className = "status no";
-      btnEl.textContent = "再認証";
-      btnEl.style.display = "inline-flex";
-    } else if (data.credentialsConfigured) {
-      statusEl.textContent = "Google連携: 未認証（認証するとDrive/Sheets保存が使えます）";
-      statusEl.className = "status no";
-      btnEl.textContent = "Google認証";
-      btnEl.style.display = "inline-flex";
     } else {
       statusEl.textContent = "Google連携: 未設定（PDF生成のみ利用可能）";
       statusEl.className = "status no";
-      btnEl.style.display = "none";
     }
   } catch (e) {
     document.getElementById("authStatus").textContent = "Google連携: 確認エラー";
-  }
-}
-
-async function startAuth() {
-  const btn = document.getElementById("authBtn");
-  btn.disabled = true;
-  btn.textContent = "認証ページへ移動中...";
-
-  try {
-    const res = await fetch("/api/auth/start", { method: "POST" });
-    const data = await res.json();
-    if (data.success && data.authUrl) {
-      // Googleの認証ページにリダイレクト
-      window.location.href = data.authUrl;
-    } else {
-      alert("認証エラー: " + (data.error || "不明なエラー"));
-      btn.disabled = false;
-      btn.textContent = "Google認証";
-    }
-  } catch (e) {
-    alert("認証エラー: " + e.message);
-    btn.disabled = false;
-    btn.textContent = "Google認証";
   }
 }
 

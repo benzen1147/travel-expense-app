@@ -9,7 +9,7 @@ from datetime import date, datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
-from flask import Flask, jsonify, redirect, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory
 
 import config
 from services.pdf_generator import build_expense_report
@@ -84,20 +84,9 @@ def health():
         checks["pdf_generation"] = f"ERROR: {type(e).__name__}: {e}"
         checks["pdf_traceback"] = traceback.format_exc()
 
-    # 3. Google認証状態
-    from services.google_auth import is_authenticated, get_credentials
-    checks["authenticated"] = is_authenticated()
-    checks["token_file_exists"] = Path(config.GOOGLE_TOKEN_FILE).exists()
-    checks["token_env_set"] = bool(os.environ.get("GOOGLE_TOKEN_JSON", "").strip())
-    checks["client_id_set"] = bool(config.GOOGLE_CLIENT_ID)
-    # トークンのスコープ確認
-    try:
-        token_str = os.environ.get("GOOGLE_TOKEN_JSON", "")
-        if token_str:
-            token_info = json.loads(token_str)
-            checks["token_scopes"] = token_info.get("scopes", [])
-    except Exception:
-        pass
+    # 3. Google認証状態（サービスアカウント）
+    from services.google_auth import is_authenticated
+    checks["service_account_configured"] = is_authenticated()
 
     # 4. Google API テスト
     try:
@@ -152,64 +141,15 @@ def get_config():
 
 
 # ──────────────────────────────
-# Google認証（Web Application Flow）
+# Google認証ステータス（サービスアカウント）
 # ──────────────────────────────
 @app.route("/api/auth/status")
 def auth_status():
-    from services.google_auth import get_credentials, is_authenticated
-    creds_configured = bool(config.GOOGLE_CLIENT_ID and config.GOOGLE_CLIENT_SECRET)
-    # トークンが存在するだけでなく、実際に有効かチェック
-    token_exists = is_authenticated()
-    creds_valid = get_credentials() is not None if token_exists else False
+    from services.google_auth import is_authenticated
+    configured = is_authenticated()
     return jsonify({
-        "authenticated": creds_valid,
-        "tokenExists": token_exists,
-        "credentialsConfigured": creds_configured,
+        "authenticated": configured,
     })
-
-
-@app.route("/api/auth/start", methods=["POST"])
-def auth_start():
-    """認証URLを返す。フロントエンドがそのURLにリダイレクトする。"""
-    try:
-        from services.google_auth import get_auth_url
-        auth_url = get_auth_url()
-        return jsonify({"success": True, "authUrl": auth_url})
-    except ValueError as e:
-        return jsonify({"success": False, "error": str(e)}), 400
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-
-
-@app.route("/api/auth/callback")
-def auth_callback():
-    """Google OAuth コールバック。認可コードを受け取りトークンを保存。"""
-    code = request.args.get("code")
-    error = request.args.get("error")
-
-    if error:
-        return f"認証がキャンセルされました: {error}", 400
-
-    if not code:
-        return "認可コードがありません。", 400
-
-    try:
-        from services.google_auth import exchange_code
-        creds, token_json = exchange_code(code)
-
-        # Render等のエフェメラル環境向け：
-        # 常にトークンJSONを表示して環境変数への設定を促す
-        return (
-            "<html><body style='font-family:sans-serif;max-width:700px;margin:40px auto;'>"
-            "<h2>Google認証成功</h2>"
-            "<p>以下のトークンJSONを Render の環境変数 <code>GOOGLE_TOKEN_JSON</code> に設定（上書き）してください。</p>"
-            "<p>設定後、Manual Deploy すれば永続的に認証が維持されます。</p>"
-            f"<textarea style='width:100%;height:200px;font-size:12px'>{token_json}</textarea>"
-            "<br><br><a href='/'>アプリに戻る（今回のセッションは認証済み）</a>"
-            "</body></html>"
-        )
-    except Exception as e:
-        return f"認証エラー: {e}", 500
 
 
 # ──────────────────────────────

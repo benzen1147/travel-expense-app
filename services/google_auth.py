@@ -1,117 +1,47 @@
 # -*- coding: utf-8 -*-
-"""Google OAuth2 認証管理（Web Application Flow）"""
+"""Google サービスアカウント認証"""
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import Flow
+from google.oauth2.service_account import Credentials
 
 import config
 
-
-def _build_client_config() -> dict:
-    """環境変数から OAuth クライアント設定を構築。"""
-    if not config.GOOGLE_CLIENT_ID or not config.GOOGLE_CLIENT_SECRET:
-        raise ValueError(
-            "GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET が設定されていません。"
-        )
-    return {
-        "web": {
-            "client_id": config.GOOGLE_CLIENT_ID,
-            "client_secret": config.GOOGLE_CLIENT_SECRET,
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token",
-            "redirect_uris": [f"{config.APP_URL}/api/auth/callback"],
-        }
-    }
-
-
-def _load_token_json() -> str | None:
-    """環境変数 or ファイルからトークンJSONを読む。"""
-    # 環境変数優先（Render等の永続化用）
-    env_token = os.environ.get("GOOGLE_TOKEN_JSON", "").strip()
-    if env_token:
-        return env_token
-    # フォールバック: ファイル（ローカル用）
-    token_path = Path(config.GOOGLE_TOKEN_FILE)
-    if token_path.exists():
-        return token_path.read_text()
-    return None
-
-
-def _save_token(creds: Credentials):
-    """トークンを保存。メモリ上の環境変数も即座に更新する。"""
-    token_json = creds.to_json()
-    # メモリ上の環境変数を更新（現セッションで即時反映）
-    os.environ["GOOGLE_TOKEN_JSON"] = token_json
-    # ファイルにも保存（ローカル用）
-    try:
-        with open(config.GOOGLE_TOKEN_FILE, "w") as f:
-            f.write(token_json)
-    except OSError:
-        pass
-
-
-def get_auth_url() -> str:
-    """認証URLを生成して返す。"""
-    flow = Flow.from_client_config(
-        _build_client_config(),
-        scopes=config.GOOGLE_SCOPES,
-        redirect_uri=f"{config.APP_URL}/api/auth/callback",
-    )
-    auth_url, _ = flow.authorization_url(
-        access_type="offline",
-        prompt="consent",
-    )
-    return auth_url
-
-
-def exchange_code(code: str) -> tuple[Credentials, str]:
-    """認可コードをトークンに交換し、保存する。トークンJSONも返す。"""
-    flow = Flow.from_client_config(
-        _build_client_config(),
-        scopes=config.GOOGLE_SCOPES,
-        redirect_uri=f"{config.APP_URL}/api/auth/callback",
-    )
-    flow.fetch_token(code=code)
-    creds = flow.credentials
-    _save_token(creds)
-    return creds, creds.to_json()
+_SCOPES = [
+    "https://www.googleapis.com/auth/drive",
+    "https://www.googleapis.com/auth/spreadsheets",
+]
 
 
 def get_credentials() -> Credentials | None:
     """
-    保存済みトークンからCredentialsを取得。
-    期限切れなら自動リフレッシュ。無効なら None を返す。
+    サービスアカウントの Credentials を取得。
+    環境変数 GOOGLE_SERVICE_ACCOUNT_JSON → ファイルパスの順でフォールバック。
     """
-    token_json = _load_token_json()
-    if not token_json:
-        return None
-
-    try:
-        info = json.loads(token_json)
-        # スコープ検証はGoogle側で行うため、クライアント側では指定しない
-        creds = Credentials.from_authorized_user_info(info)
-    except Exception:
-        return None
-
-    if creds and creds.expired and creds.refresh_token:
+    # 1. 環境変数からJSON文字列を読み込み
+    sa_json = config.GOOGLE_SERVICE_ACCOUNT_JSON.strip()
+    if sa_json:
         try:
-            creds.refresh(Request())
-            _save_token(creds)
+            info = json.loads(sa_json)
+            return Credentials.from_service_account_info(info, scopes=_SCOPES)
         except Exception:
             return None
 
-    if not creds or not creds.valid:
-        return None
+    # 2. ファイルパスからフォールバック
+    sa_file = Path(config.GOOGLE_SERVICE_ACCOUNT_FILE)
+    if sa_file.exists():
+        try:
+            return Credentials.from_service_account_file(str(sa_file), scopes=_SCOPES)
+        except Exception:
+            return None
 
-    return creds
+    return None
 
 
 def is_authenticated() -> bool:
-    """認証済みかどうか。"""
-    return _load_token_json() is not None
+    """サービスアカウントが設定されているか。"""
+    if config.GOOGLE_SERVICE_ACCOUNT_JSON.strip():
+        return True
+    return Path(config.GOOGLE_SERVICE_ACCOUNT_FILE).exists()

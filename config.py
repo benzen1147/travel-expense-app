@@ -44,17 +44,13 @@ HIGH_ACCOMMODATION_THRESHOLD = 30000
 # Flask
 SECRET_KEY = os.environ.get("APP_SECRET_KEY", "dev-secret-change-me")
 
-# アプリURL（OAuthリダイレクト用）
-APP_URL = os.environ.get("APP_URL", "http://127.0.0.1:5000")
-
-# Google API設定（Web Application Flow）
-GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
-GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
-GOOGLE_TOKEN_FILE = str(BASE_DIR / "token.json")
-GOOGLE_SCOPES = [
-    "https://www.googleapis.com/auth/drive",
-    "https://www.googleapis.com/auth/spreadsheets",
-]
+# Google サービスアカウント設定
+# 環境変数にJSONキー文字列を設定（Render等の本番環境用）
+GOOGLE_SERVICE_ACCOUNT_JSON = os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON", "")
+# ファイルパスのフォールバック（ローカル開発用）
+GOOGLE_SERVICE_ACCOUNT_FILE = os.environ.get(
+    "GOOGLE_SERVICE_ACCOUNT_FILE", str(BASE_DIR / "service-account.json"),
+)
 
 # Google Drive設定
 DRIVE_PARENT_FOLDER_ID = os.environ.get(
