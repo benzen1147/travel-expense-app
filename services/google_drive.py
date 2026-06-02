@@ -80,38 +80,30 @@ def upload_expense_report(
     """
     精算書関連ファイルを Google Drive にアップロード。
 
-    フォルダ構成:
-      合同会社mofu_出張旅費精算/
-        └── YYYYMMDD_出張者名_目的地出張/
-              ├── 精算書.pdf
-              ├── 結合.pdf
-              └── 領収書/
+    指定の共有フォルダに直接PDFを保存する。
+    領収書がある場合のみサブフォルダを作成。
     """
     service = _get_service(creds)
 
-    # 親フォルダ（指定の共有フォルダを直接使用）
+    # 指定の共有フォルダに直接アップロード
     parent_id = config.DRIVE_PARENT_FOLDER_ID
 
-    # 個別フォルダ
-    dep = form_data["departure_date"]
-    dep_str = dep.strftime("%Y%m%d") if hasattr(dep, "strftime") else str(dep).replace("-", "")
-    name = form_data.get("applicant_name", "").replace("　", "").replace(" ", "")
-    dest = form_data.get("destination", "").replace("/", "_")
-    folder_name = f"{dep_str}_{name}_{dest}出張"
-    folder_id = _find_or_create_folder(service, folder_name, parent_id)
-
-    # ファイルアップロード
-    _upload_file(service, report_pdf, folder_id)
+    # PDFアップロード
+    _upload_file(service, report_pdf, parent_id)
 
     if merged_pdf and merged_pdf.exists():
-        _upload_file(service, merged_pdf, folder_id)
+        _upload_file(service, merged_pdf, parent_id)
 
-    # 領収書
+    # 領収書（サブフォルダにまとめる）
     if receipt_paths:
-        receipt_folder_id = _find_or_create_folder(service, "領収書", folder_id)
+        dep = form_data["departure_date"]
+        dep_str = dep.strftime("%Y%m%d") if hasattr(dep, "strftime") else str(dep).replace("-", "")
+        name = form_data.get("applicant_name", "").replace("　", "").replace(" ", "")
+        receipt_folder_name = f"{dep_str}_{name}_領収書"
+        receipt_folder_id = _find_or_create_folder(service, receipt_folder_name, parent_id)
         for rp in receipt_paths:
             if Path(rp).exists():
                 _upload_file(service, Path(rp), receipt_folder_id)
 
-    folder_url = f"https://drive.google.com/drive/folders/{folder_id}"
-    return {"folderUrl": folder_url, "folderId": folder_id}
+    folder_url = f"https://drive.google.com/drive/folders/{parent_id}"
+    return {"folderUrl": folder_url, "folderId": parent_id}
