@@ -11,11 +11,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   addTransportRow();
   addAccommodationRow();
 
-  // 提出日デフォルト: 今日
+  // デフォルト値
   document.getElementById("submissionDate").value = todayStr();
+  document.getElementById("destination").value = "大阪府";
+
+  // 出発日 → 帰着日を自動設定
+  document.getElementById("departureDate").addEventListener("change", function() {
+    const retEl = document.getElementById("returnDate");
+    if (!retEl.value) {
+      retEl.value = this.value;
+    }
+    recalc();
+  });
 
   // リアルタイム計算イベント
-  document.getElementById("departureDate").addEventListener("change", recalc);
   document.getElementById("returnDate").addEventListener("change", recalc);
   document.getElementById("applicantRole").addEventListener("change", recalc);
   document.getElementById("isOverseas").addEventListener("change", recalc);
@@ -428,12 +437,9 @@ function resetForm() {
   document.querySelectorAll(".section").forEach(s => s.style.opacity = "1");
   document.getElementById("submitBtn").disabled = false;
 
-  // フォームリセット
-  document.getElementById("applicantName").value = "";
-  document.getElementById("applicantRole").value = "";
+  // フォームリセット（出張者名・役職・目的地は保持）
   document.getElementById("departureDate").value = "";
   document.getElementById("returnDate").value = "";
-  document.getElementById("destination").value = "";
   document.getElementById("purpose").value = "";
   document.getElementById("isOverseas").value = "false";
   document.getElementById("submissionDate").value = todayStr();
