@@ -58,7 +58,7 @@ GOOGLE_SCOPES = [
 
 # Google Drive設定
 DRIVE_PARENT_FOLDER_ID = os.environ.get(
-    "GOOGLE_DRIVE_FOLDER_ID", "1Xq7H_jCqEdIBQNVEZ8jqPQIwTKYxSIdZ",
+    "GOOGLE_DRIVE_FOLDER_ID", "13eqPBav9u_juGjdg3tj8owdQzUNNYMU5",
 )
 
 # Google Sheets設定
